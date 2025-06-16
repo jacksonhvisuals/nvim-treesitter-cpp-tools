@@ -1,7 +1,4 @@
-local ts_utils = require("nvim-treesitter.ts_utils")
-local ts_query = require("nvim-treesitter.query")
-local parsers = require("nvim-treesitter.parsers")
-local previewer = require("nt-cpp-tools.preview_printer")
+local ts = vim.treesitter
 local output_handlers = require("nt-cpp-tools.output_handlers")
 local util = require("nt-cpp-tools.util")
 
@@ -14,7 +11,7 @@ local function get_node_text(node, bufnr)
 
     bufnr = bufnr or vim.api.nvim_get_current_buf()
 
-    local txtStr = vim.treesitter.get_node_text(node, bufnr)
+    local txtStr = ts.get_node_text(node, bufnr)
     local txt = {}
 
     for str in string.gmatch(txtStr, "([^\n]+)") do
@@ -25,9 +22,9 @@ end
 
 local function run_on_nodes(query, runner, sel_start_row, sel_end_row)
     local bufnr = 0
-    local ft = vim.api.nvim_buf_get_option(bufnr, 'ft')
+    local ft = vim.bo.filetype
 
-    local parser = parsers.get_parser(bufnr, ft)
+    local parser = ts.get_parser(bufnr, ft)
     local root = parser:parse()[1]:root()
 
     local matches = query:iter_matches(root, bufnr, sel_start_row, sel_end_row + 1)
@@ -37,6 +34,7 @@ local function run_on_nodes(query, runner, sel_start_row, sel_end_row)
         if pattern == nil then
             break
         end
+
         if type(match[1][1]) == 'userdata' then -- fix for 6913c5e1 in nvim  
           for _, m in pairs(match) do
             runner(query.captures, m)
@@ -264,7 +262,7 @@ function M.imp_func(range_start, range_end, custom_cb)
     range_start = range_start - 1
     range_end = range_end - 1
 
-    local query = ts_query.get_query('cpp', 'outside_class_def')
+    local query = ts.query.get('cpp', 'outside_class_def')
 
     local e_row
     local results = {}
@@ -342,7 +340,7 @@ function M.concrete_class_imp(range_start, range_end)
     range_start = range_start - 1
     range_end = range_end - 1
 
-    local query = ts_query.get_query('cpp', 'concrete_implement')
+    local query = ts.query.get('cpp', 'concrete_implement')
     local base_class = ''
     local results = {}
     local e_row
@@ -387,7 +385,7 @@ function M.rule_of_5(limit_at_3, range_start, range_end)
     range_start = range_start - 1
     range_end = range_end - 1
 
-    local query = ts_query.get_query('cpp', 'special_function_detectors')
+    local query = ts.query.get('cpp', 'special_function_detectors')
 
     local checkers = {
         destructor = false,
